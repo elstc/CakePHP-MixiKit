@@ -125,7 +125,7 @@ class MixiGraphApiSourceTestCase extends CakeTestCase {
 
         $code = 'aa';
         $result = $ds->getAccessToken($code);
-        $this->assertFalse($result, 'Invalid code: %s');
+        $this->assertTrue(isset($result['error']), 'Invalid code: %s');
 
         return $this->skipIf(true);
         // -- 以下をテストする場合、codeは3分のみ有効なので、以下のURLにアクセスして毎回取得する
@@ -147,13 +147,6 @@ class MixiGraphApiSourceTestCase extends CakeTestCase {
         $ds = ConnectionManager::getDataSource('test_mixi_graph_api');
         /* @var $ds MixiGraphApiSource */
 
-        $tokens = array(
-            'refresh_token' => 'a6065549ec8e7be1b0505c31142ff200a7de8869',
-            'expires_in' => '900',
-            'access_token' => '0bca91686a196368e3e135beef38a6ad70808941',
-            'scope' => 'r_voice w_voice',
-        );
-
         $result = $ds->refreshAccessToken();
         $this->assertFalse($result, 'empty refresh_token: %s');
 
@@ -170,91 +163,27 @@ class MixiGraphApiSourceTestCase extends CakeTestCase {
         debug($result);
     }
 
-    function testOauthRequestToken() {
-
-        return $this->skipIf(true);
-        $result = $this->TestSource->oauth_request_token(Router::url('/mixi_kit/callback', true));
-
-        $this->assertTrue(is_array($result));
-        $this->assertTrue(is_string($result['code']));
-    }
-
-    function testOauthAuthorize() {
-
-        return $this->skipIf(true);
-        $result = $this->TestSource->oauth_authorize('dummy_token');
-        $this->assertEqual('http://api.twitter.com/oauth/authorize?oauth_token=dummy_token', $result);
-
-        $token = $this->TestSource->oauth_request_token(Router::url('/twitter_kit/callback', true));
-        $result = $this->TestSource->oauth_authorize();
-        $this->assertEqual('http://api.twitter.com/oauth/authorize?oauth_token=' . $token['oauth_token'], $result);
-    }
-
-    function testOauthAuthenticate() {
-
-        return $this->skipIf(true);
-        $result = $this->TestSource->oauth_authenticate('dummy_token');
-        $this->assertEqual('http://api.twitter.com/oauth/authenticate?oauth_token=dummy_token', $result);
-
-        $token = $this->TestSource->oauth_request_token(Router::url('/twitter_kit/callback', true));
-        $result = $this->TestSource->oauth_authenticate();
-        $this->assertEqual('http://api.twitter.com/oauth/authenticate?oauth_token=' . $token['oauth_token'], $result);
-    }
-
-    function testOauthAccessToken() {
-
-        return $this->skipIf(true);
-
-        $requestToken = $this->TestSource->oauth_request_token(Router::url('/openlist/twitter_kit/callback', true));
-        $authUrl = $this->TestSource->oauth_authorize();
-
-        debug($authUrl);
-
-        $url = 'http://localhost/openlist/twitter_kit/callback?oauth_token=ly4DCCcq4gddZMuFNp7vbJgQiSna7Hoq4Xd7CuGOOk&oauth_verifier=Nvnw5OnMkVFv5S4tjLvKLLmsMbDyKEM92HeEILC6u7g';
-
-        $oauth_token = 'ly4DCCcq4gddZMuFNp7vbJgQiSna7Hoq4Xd7CuGOOk';
-        $oauth_verifier = 'Nvnw5OnMkVFv5S4tjLvKLLmsMbDyKEM92HeEILC6u7g';
-
-        $token = $this->TestSource->oauth_access_token($oauth_token, $oauth_verifier);
-
-        if (is_string($token)) {
-
-            $this->assertEqual('Invalid / expired Token', $token);
-        } else {
-
-            $this->assertTrue(is_array($token));
-            $this->assertTrue(is_string($token['oauth_token']));
-            $this->assertTrue(is_string($token['oauth_token_secret']));
-            $this->assertTrue(is_string($token['user_id']));
-            $this->assertTrue(is_string($token['screen_name']));
-            $this->assertEqual($token['oauth_token'], $this->TestSource->oauth_token);
-            $this->assertEqual($token['oauth_token_secret'], $this->TestSource->oauth_token_secret);
-        }
-    }
-
     function testSetToken() {
 
-        return $this->skipIf(true);
-        $this->TestSource->reset();
-        $result = $this->TestSource->setToken('');
+        $ds = ConnectionManager::getDataSource('test_mixi_graph_api');
+        /* @var $ds MixiGraphApiSource */
+
+        $ds->reset();
+        $result = $ds->setToken('');
         $this->assertFalse($result);
-        $this->assertEqual('', $this->TestSource->oauth_token);
-        $this->assertEqual('', $this->TestSource->oauth_token_secret);
+        $this->assertEqual('', $ds->oauth_token);
 
-        $this->TestSource->reset();
-        $result = $this->TestSource->setToken(array('oauth_token' => 'dummy_token', 'oauth_token_secret' => 'dummy_secret'));
+        $ds->reset();
+        $result = $ds->setToken(array('access_token' => 'dummy_token'));
         $this->assertTrue($result);
-        $this->assertEqual('dummy_token', $this->TestSource->oauth_token);
-        $this->assertEqual('dummy_secret', $this->TestSource->oauth_token_secret);
+        $this->assertEqual('dummy_token', $ds->oauth_token);
 
-        $this->TestSource->reset();
-        $this->assertEqual('', $this->TestSource->oauth_token);
-        $this->assertEqual('', $this->TestSource->oauth_token_secret);
+        $ds->reset();
+        $this->assertEqual('', $ds->oauth_token);
 
-        $result = $this->TestSource->setToken('dummy_token2', 'dummy_secret2');
+        $result = $ds->setToken('dummy_token2');
         $this->assertTrue($result);
-        $this->assertEqual('dummy_token2', $this->TestSource->oauth_token);
-        $this->assertEqual('dummy_secret2', $this->TestSource->oauth_token_secret);
+        $this->assertEqual('dummy_token2', $ds->oauth_token);
     }
 
 }

@@ -152,9 +152,9 @@ class MixiGraphApiSource extends DataSource {
      */
     public function setToken($token) {
 
-        if (is_array($token) && !empty($token['oauth_token'])) {
+        if (is_array($token) && !empty($token['access_token'])) {
 
-            $this->oauth_token = $token['oauth_token'];
+            $this->oauth_token = $token['access_token'];
 
             return true;
         } else if (!empty($token)) {
@@ -220,7 +220,6 @@ class MixiGraphApiSource extends DataSource {
         // -- error logging
         if ($is_process && !empty($response['error'])) {
             $this->log($response['error'] . "\n" . print_r($params, true), LOG_DEBUG);
-            return false;
         }
 
         return $response;
