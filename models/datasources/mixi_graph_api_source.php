@@ -19,27 +19,19 @@ App::import('vendor', 'MixiKit.HttpSocketOauth', array('file' => 'http_socket_oa
  * @copyright  2010, ELASTIC Consultants Inc.
  * @license    http://www.opensource.org/licenses/mit-license.php The MIT License
  * @link       http://elasticconsultants.com
- * @package    twitter_kit
- * @subpackage twitter_kit.models.datasources
- * @since      TwitterKit 1.0
+ * @package    mixi_kit
+ * @subpackage mixi_kit.models.datasources
+ * @since      MixiKit 1.0
  * @modifiedby nojimage <nojima at elasticconsultants.com>
  *
  * @see http://developer.mixi.co.jp/connect/mixi_graph_api/mixi_io_spec_top/api_common_spec
- *
- * This Class use HttpSocketOAuth:
- *
- *   Neil Crookes » OAuth extension to CakePHP HttpSocket
- *     http://www.neilcrookes.com/2010/04/12/cakephp-oauth-extension-to-httpsocket/
- *     http://github.com/neilcrookes/http_socket_oauth
- *
- * Thank you.
  */
 class MixiGraphApiSource extends DataSource {
 
     public $description = 'Mixi Graph API';
     /**
      *
-     * @var HttpSocketOauth
+     * @var HttpSocket
      */
     public $Http;
     /**
@@ -128,7 +120,7 @@ class MixiGraphApiSource extends DataSource {
 
         parent::__construct($config);
 
-        $this->Http = & new HttpSocketOauth();
+        $this->Http = & new HttpSocket();
 
         $this->reset();
     }
@@ -292,22 +284,14 @@ class MixiGraphApiSource extends DataSource {
         }
 
         $params = compact('uri', 'method', 'body');
-        /*
-          // -- Set Auth parameter
-          if (!empty($this->oauth_consumer_key) && !empty($this->oauth_consumer_secret)) {
 
-          // OAuth
-          $params['auth']['method'] = 'OAuth';
-          $params['auth']['oauth_consumer_key'] = $this->oauth_consumer_key;
-          $params['auth']['oauth_consumer_secret'] = $this->oauth_consumer_secret;
 
-          if (!empty($this->oauth_token) && !empty($this->oauth_token_secret)) {
+        // -- Set Auth parameter
+        if (!empty($this->oauth_token)) {
+            // OAuth
+            $params['header'] = array('Authorization' => 'OAuth ' . $this->oauth_token);
+        }
 
-          $params['auth']['oauth_token'] = $this->oauth_token;
-          $params['auth']['oauth_token_secret'] = $this->oauth_token_secret;
-          }
-          }
-         */
         return $params;
     }
 
@@ -431,6 +415,361 @@ class MixiGraphApiSource extends DataSource {
         }
 
         return $result;
+    }
+
+    /**
+     * あるユーザのつぶやき一覧の取得
+     * 
+     * @param array $options
+     *      user_id:  取得したいユーザのID、もしくは認可ユーザ自身を示す”@me”
+     *      since_id: このパラメータ値として、あるつぶやきのIDを指定することで、
+     *                そのつぶやきよりも新しく投稿されたつぶやきの一覧に限定することができます（since_idは省略可）
+     * @see http://developer.mixi.co.jp/connect/mixi_graph_api/mixi_io_spec_top/voice-api
+     */
+    public function getVoiceStatusesUserTimeline($options = array()) {
+
+        $params = array('user_id' => '@me');
+        if (is_string($options) && !empty($options)) {
+            $params['user_id'] = $options;
+        } else {
+            $params = am($params, $options);
+        }
+
+        $userId = rawurlencode($params['user_id']);
+        unset($params['user_id']);
+
+        $url = sprintf('http://api.mixi-platform.com/2/voice/statuses/%s/user_timeline', $userId);
+        $method = 'GET';
+
+        return $this->_request($this->_buildRequest($url, $method, $params));
+    }
+
+    /**
+     * 友人のつぶやき一覧の取得
+     *
+     * @param array $options
+     *      group_id:  グループのID、省略可
+     *      since_id: このパラメータ値として、あるつぶやきのIDを指定することで、
+     *                そのつぶやきよりも新しく投稿されたつぶやきの一覧に限定することができます（since_idは省略可）
+     * @see http://developer.mixi.co.jp/connect/mixi_graph_api/mixi_io_spec_top/voice-api
+     */
+    public function getVoiceStatusesFriendsTimeline($options = array()) {
+
+        $params = array();
+        if (is_string($options)) {
+            $params['group_id'] = $options;
+        } else {
+            $params = am($params, $options);
+        }
+
+        $groupId = '';
+        if (!empty($params['group_id'])) {
+            $groupId = rawurlencode($params['group_id']);
+            unset($params['group_id']);
+        }
+
+        $url = sprintf('http://api.mixi-platform.com/2/voice/statuses/friends_timeline/%s', $groupId);
+        $method = 'GET';
+
+        return $this->_request($this->_buildRequest($url, $method, $params));
+    }
+
+    /**
+     * ある特定のつぶやき情報の取得
+     *
+     * @param array $options
+     *      post_id:  取得したいつぶやきを特定するためのID
+     * @see http://developer.mixi.co.jp/connect/mixi_graph_api/mixi_io_spec_top/voice-api
+     */
+    public function getVoiceStatusesShow($options = array()) {
+
+        $params = array();
+        if (is_string($options)) {
+            $params['post_id'] = $options;
+        } else {
+            $params = am($params, $options);
+        }
+
+        $postId = '';
+        if (!empty($params['post_id'])) {
+            $postId = $params['post_id'];
+            unset($params['post_id']);
+        }
+
+        if (empty($postId)) {
+            return false;
+        }
+
+        $url = sprintf('http://api.mixi-platform.com/2/voice/statuses/show/%s', $postId);
+        $method = 'GET';
+
+        return $this->_request($this->_buildRequest($url, $method, $params));
+    }
+
+    /**
+     * あるつぶやきのコメント一覧取得
+     *
+     * @param array $options
+     *      post_id:  コメント一覧を取得したいつぶやきを特定するためのID
+     * @see http://developer.mixi.co.jp/connect/mixi_graph_api/mixi_io_spec_top/voice-api
+     */
+    public function getVoiceRepliesShow($options = array()) {
+
+        $params = array();
+        if (is_string($options)) {
+            $params['post_id'] = $options;
+        } else {
+            $params = am($params, $options);
+        }
+
+        $postId = '';
+        if (!empty($params['post_id'])) {
+            $postId = $params['post_id'];
+            unset($params['post_id']);
+        }
+
+        if (empty($postId)) {
+            return false;
+        }
+
+        $url = sprintf('http://api.mixi-platform.com/2/voice/replies/show/%s', $postId);
+        $method = 'GET';
+
+        return $this->_request($this->_buildRequest($url, $method, $params));
+    }
+
+    /**
+     * あるつぶやきのイイネ！一覧取得
+     *
+     * @param array $options
+     *      post_id:  コメント一覧を取得したいつぶやきを特定するためのID
+     * @see http://developer.mixi.co.jp/connect/mixi_graph_api/mixi_io_spec_top/voice-api
+     */
+    public function getVoiceFavoritesShow($options = array()) {
+
+        $params = array();
+        if (is_string($options)) {
+            $params['post_id'] = $options;
+        } else {
+            $params = am($params, $options);
+        }
+
+        $postId = '';
+        if (!empty($params['post_id'])) {
+            $postId = $params['post_id'];
+            unset($params['post_id']);
+        }
+
+        if (empty($postId)) {
+            return false;
+        }
+
+        $url = sprintf('http://api.mixi-platform.com/2/voice/favorites/show/%s', $postId);
+        $method = 'GET';
+
+        return $this->_request($this->_buildRequest($url, $method, $params));
+    }
+
+    /**
+     * つぶやきの投稿
+     *
+     * @param array $options
+     *      status:  取得したいつぶやきを特定するためのID
+     * @see http://developer.mixi.co.jp/connect/mixi_graph_api/mixi_io_spec_top/voice-api
+     */
+    public function postVoiceStatuses($options = array()) {
+
+        $params = array();
+        if (is_string($options)) {
+            $params['status'] = $options;
+        } else {
+            $params = am($params, $options);
+        }
+
+        if (empty($params['status'])) {
+            return false;
+        }
+
+        $url = 'http://api.mixi-platform.com/2/voice/statuses';
+        $method = 'POST';
+
+        return $this->_request($this->_buildRequest($url, $method, $params));
+    }
+
+    /**
+     * あるつぶやきの削除
+     *
+     * @param array $options
+     *      post_id:  削除したいつぶやきを特定するためのID
+     * @see http://developer.mixi.co.jp/connect/mixi_graph_api/mixi_io_spec_top/voice-api
+     */
+    public function deleteVoiceStatuses($options = array()) {
+
+        $params = array();
+        if (is_string($options)) {
+            $params['post_id'] = $options;
+        } else {
+            $params = am($params, $options);
+        }
+
+        $postId = '';
+        if (!empty($params['post_id'])) {
+            $postId = $params['post_id'];
+            unset($params['post_id']);
+        }
+
+        if (empty($postId)) {
+            return false;
+        }
+
+        $url = sprintf('http://api.mixi-platform.com/2/voice/statuses/%s', $postId);
+        $method = 'DELETE';
+
+        return $this->_request($this->_buildRequest($url, $method, $params));
+    }
+
+    /**
+     * コメントの投稿
+     *
+     * @param array $options
+     *      post_id:  コメント一覧を取得したいつぶやきを特定するためのID
+     *      text:     コメントの本文
+     * @see http://developer.mixi.co.jp/connect/mixi_graph_api/mixi_io_spec_top/voice-api
+     */
+    public function postVoiceReplies($options = array()) {
+
+        $params = array();
+        if (is_string($options)) {
+            $params['post_id'] = $options;
+        } else {
+            $params = am($params, $options);
+        }
+
+        $postId = '';
+        if (!empty($params['post_id'])) {
+            $postId = $params['post_id'];
+            unset($params['post_id']);
+        }
+
+        if (empty($postId)) {
+            return false;
+        }
+
+        $url = sprintf('http://api.mixi-platform.com/2/voice/replies/%s', $postId);
+        $method = 'POST';
+
+        return $this->_request($this->_buildRequest($url, $method, $params));
+    }
+
+
+    /**
+     * あるコメントの削除
+     *
+     * @param array $options
+     *      post_id:  コメント一覧を取得したいつぶやきを特定するためのID
+     *      comment_id:     コメントの本文
+     * @see http://developer.mixi.co.jp/connect/mixi_graph_api/mixi_io_spec_top/voice-api
+     */
+    public function deleteVoiceReplies($options = array()) {
+
+        $params = array();
+        if (is_string($options)) {
+            $params['post_id'] = $options;
+        } else {
+            $params = am($params, $options);
+        }
+
+        $postId = '';
+        if (!empty($params['post_id'])) {
+            $postId = $params['post_id'];
+            unset($params['post_id']);
+        }
+
+        $commentId = '';
+        if (!empty($params['comment_id'])) {
+            $commentId = $params['comment_id'];
+            unset($params['comment_id']);
+        }
+
+        if (empty($postId) || empty($commentId)) {
+            return false;
+        }
+
+        $url = sprintf('http://api.mixi-platform.com/2/voice/replies/%s/%s', $postId, $commentId);
+        $method = 'DELETE';
+
+        return $this->_request($this->_buildRequest($url, $method, $params));
+    }
+
+    /**
+     * イイネ！の投稿
+     *
+     * @param array $options
+     *      post_id:  イイネ！を投稿したいつぶやきを特定するためのID
+     * @see http://developer.mixi.co.jp/connect/mixi_graph_api/mixi_io_spec_top/voice-api
+     */
+    public function postVoiceFavorites($options = array()) {
+
+        $params = array();
+        if (is_string($options)) {
+            $params['post_id'] = $options;
+        } else {
+            $params = am($params, $options);
+        }
+
+        $postId = '';
+        if (!empty($params['post_id'])) {
+            $postId = $params['post_id'];
+            unset($params['post_id']);
+        }
+
+        if (empty($postId)) {
+            return false;
+        }
+
+        $url = sprintf('http://api.mixi-platform.com/2/voice/favorites/%s', $postId);
+        $method = 'POST';
+
+        return $this->_request($this->_buildRequest($url, $method, $params));
+    }
+
+    /**
+     * あるイイネ！の削除
+     *
+     * @param array $options
+     *      post_id:  イイネ！を投稿したいつぶやきを特定するためのID
+     *      user_id:  削除したいイイネ！の投稿者のユーザのID
+     * @see http://developer.mixi.co.jp/connect/mixi_graph_api/mixi_io_spec_top/voice-api
+     */
+    public function deleteVoiceFavorites($options = array()) {
+
+        $params = array();
+        if (is_string($options)) {
+            $params['post_id'] = $options;
+        } else {
+            $params = am($params, $options);
+        }
+
+        $postId = '';
+        if (!empty($params['post_id'])) {
+            $postId = $params['post_id'];
+            unset($params['post_id']);
+        }
+
+        $userId = '';
+        if (!empty($params['user_id'])) {
+            $userId = $params['user_id'];
+            unset($params['user_id']);
+        }
+
+        if (empty($postId) || empty($userId)) {
+            return false;
+        }
+
+        $url = sprintf('http://api.mixi-platform.com/2/voice/favorites/%s/%s', $postId, $userId);
+        $method = 'POST';
+
+        return $this->_request($this->_buildRequest($url, $method, $params));
     }
 
 }

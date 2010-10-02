@@ -31,7 +31,7 @@ ConnectionManager::create('test_mixi_graph_api',
                     'datasource' => 'MixiKit.MixiGraphApi',
                     'oauth_consumer_key' => 'cf60e9095216f4ca5bd6',
                     'oauth_consumer_secret' => '51f0044ddab1f3acd3bfcbf40931b6c709bef89d',
-                    'oauth_callback' => 'http://nojimage.local/mixi_connect',
+                    'oauth_callback' => 'http://nojimage.local/mixi_connect/mixi_kit/oauth/callback',
         ));
 
 class TestModel extends CakeTestModel {
@@ -184,6 +184,215 @@ class MixiGraphApiSourceTestCase extends CakeTestCase {
         $result = $ds->setToken('dummy_token2');
         $this->assertTrue($result);
         $this->assertEqual('dummy_token2', $ds->oauth_token);
+    }
+
+    function testGetVoiceStatusesUserTimeline() {
+
+        return $this->skipIf(true);
+
+        $ds = ConnectionManager::getDataSource('test_mixi_graph_api');
+        /* @var $ds MixiGraphApiSource */
+
+        // -- refreshTokenが無効になる場合あり
+        $refreshToken = 'a6065549ec8e7be1b0505c31142ff200a7de8869';
+        $ds->setToken($ds->refreshAccessToken($refreshToken));
+
+        $result = $ds->getVoiceStatusesUserTimeline();
+        $this->assertTrue(is_array($result));
+        $this->assertTrue(Set::numeric(array_keys($result)));
+        $this->assertTrue(isset($result[0]['id']));
+        $this->assertTrue(isset($result[0]['text']));
+        $this->assertTrue(isset($result[0]['created_at']));
+        $this->assertTrue(is_array($result[0]['user']));
+
+        #debug($result);
+    }
+
+    function testGetVoiceStatusesFriendsTimeline() {
+
+        return $this->skipIf(true);
+
+        $ds = ConnectionManager::getDataSource('test_mixi_graph_api');
+        /* @var $ds MixiGraphApiSource */
+
+        // -- refreshTokenが無効になる場合あり
+        $refreshToken = 'a6065549ec8e7be1b0505c31142ff200a7de8869';
+        $ds->setToken($ds->refreshAccessToken($refreshToken));
+
+        $result = $ds->getVoiceStatusesFriendsTimeline();
+        $this->assertTrue(is_array($result));
+        $this->assertTrue(Set::numeric(array_keys($result)));
+        $this->assertTrue(isset($result[0]['id']));
+        $this->assertTrue(isset($result[0]['text']));
+        $this->assertTrue(isset($result[0]['created_at']));
+        $this->assertTrue(is_array($result[0]['user']));
+
+        debug($result);
+    }
+
+    function testGetVoiceStatusesShow() {
+
+        return $this->skipIf(true);
+
+        $ds = ConnectionManager::getDataSource('test_mixi_graph_api');
+        /* @var $ds MixiGraphApiSource */
+
+        // -- refreshTokenが無効になる場合あり
+        $refreshToken = 'a6065549ec8e7be1b0505c31142ff200a7de8869';
+        $ds->setToken($ds->refreshAccessToken($refreshToken));
+
+        $result = $ds->getVoiceStatusesShow();
+        $this->assertFalse($result);
+
+        $id = '5q1w3ft5tfixp-20101003004857';
+        $result = $ds->getVoiceStatusesShow($id);
+        $this->assertTrue(is_array($result));
+        $this->assertTrue(isset($result['id']));
+        $this->assertTrue(isset($result['text']));
+        $this->assertTrue(isset($result['created_at']));
+        $this->assertTrue(is_array($result['user']));
+
+        #debug($result);
+    }
+
+    function testGetVoiceRepliesShow() {
+
+        return $this->skipIf(true);
+
+        $ds = ConnectionManager::getDataSource('test_mixi_graph_api');
+        /* @var $ds MixiGraphApiSource */
+
+        // -- refreshTokenが無効になる場合あり
+        $refreshToken = 'a6065549ec8e7be1b0505c31142ff200a7de8869';
+        $ds->setToken($ds->refreshAccessToken($refreshToken));
+
+        $result = $ds->getVoiceRepliesShow();
+        $this->assertFalse($result);
+
+        $id = '5q1w3ft5tfixp-20101003004857';
+        $result = $ds->getVoiceRepliesShow($id);
+        $this->assertTrue(is_array($result));
+        $this->assertTrue(Set::numeric(array_keys($result)));
+        $this->assertTrue(isset($result[0]['id']));
+        $this->assertTrue(isset($result[0]['text']));
+        $this->assertTrue(isset($result[0]['created_at']));
+        $this->assertTrue(is_array($result[0]['user']));
+
+        #debug($result);
+    }
+
+    function testGetVoiceFavoritesShow() {
+
+        return $this->skipIf(true);
+
+        $ds = ConnectionManager::getDataSource('test_mixi_graph_api');
+        /* @var $ds MixiGraphApiSource */
+
+        // -- refreshTokenが無効になる場合あり
+        $refreshToken = 'a6065549ec8e7be1b0505c31142ff200a7de8869';
+        $ds->setToken($ds->refreshAccessToken($refreshToken));
+
+        $result = $ds->getVoiceFavoritesShow();
+        $this->assertFalse($result);
+
+        $id = '5q1w3ft5tfixp-20101003004857';
+        $result = $ds->getVoiceFavoritesShow($id);
+        $this->assertTrue(is_array($result));
+        $this->assertTrue(Set::numeric(array_keys($result)));
+        $this->assertTrue(isset($result[0]['id']));
+        $this->assertTrue(isset($result[0]['url']));
+        $this->assertTrue(isset($result[0]['profile_image_url']));
+        $this->assertTrue(isset($result[0]['screen_name']));
+
+        #debug($result);
+    }
+
+    function testPostVoiceStatuses() {
+
+        return $this->skipIf(true);
+
+        $ds = ConnectionManager::getDataSource('test_mixi_graph_api');
+        /* @var $ds MixiGraphApiSource */
+
+        // -- refreshTokenが無効になる場合あり
+        $refreshToken = 'a6065549ec8e7be1b0505c31142ff200a7de8869';
+        $ds->setToken($ds->refreshAccessToken($refreshToken));
+
+        $text = 'つぶやきの投稿';
+        $result = $ds->postVoiceStatuses($text);
+        $this->assertTrue(is_array($result));
+        $this->assertTrue(isset($result['id']));
+        $this->assertTrue(isset($result['text']));
+        $this->assertTrue(isset($result['created_at']));
+        $this->assertTrue(is_array($result['user']));
+
+        debug($result);
+        $postId = $result['id'];
+
+        // -- コメントの投稿
+        $result = $ds->postVoiceReplies(array('post_id' => $postId, 'text' => 'コメントテスト'));
+        $this->assertTrue(is_array($result));
+        $this->assertTrue(isset($result['id']));
+        $this->assertTrue(isset($result['text']));
+        $this->assertTrue(isset($result['created_at']));
+        $this->assertTrue(is_array($result['user']));
+
+        debug($result);
+        $commentId = $result['id'];
+
+        // -- コメントの削除
+        $result = $ds->deleteVoiceReplies(array('post_id' => $postId, 'comment_id' => $commentId));
+        $this->assertTrue(is_array($result));
+        $this->assertTrue(isset($result['id']));
+        $this->assertTrue(isset($result['text']));
+        $this->assertTrue(isset($result['created_at']));
+        $this->assertTrue(is_array($result['user']));
+
+        debug($result);
+
+        // -- つぶやきの削除
+        $result = $ds->deleteVoiceStatuses($postId);
+        $this->assertTrue(is_array($result));
+        $this->assertTrue(isset($result['id']));
+        $this->assertTrue(isset($result['text']));
+        $this->assertTrue(isset($result['created_at']));
+        $this->assertTrue(is_array($result['user']));
+
+        debug($result);
+    }
+
+    function testPostVoiceFavorites() {
+
+        return $this->skipIf(true);
+
+        $ds = ConnectionManager::getDataSource('test_mixi_graph_api');
+        /* @var $ds MixiGraphApiSource */
+
+        // -- refreshTokenが無効になる場合あり
+        $refreshToken = 'a6065549ec8e7be1b0505c31142ff200a7de8869';
+        $ds->setToken($ds->refreshAccessToken($refreshToken));
+
+        // -- イイネ!の投稿
+        $postId = '5q1w3ft5tfixp-20101003004857';
+        $result = $ds->postVoiceFavorites(array('post_id' => $postId));
+        $this->assertTrue(is_array($result));
+        $this->assertTrue(isset($result['id']));
+        $this->assertTrue(isset($result['text']));
+        $this->assertTrue(isset($result['created_at']));
+        $this->assertTrue(is_array($result['user']));
+
+        debug($result);
+        $userId = $result['id'];
+
+        // -- イイネ!の削除
+        $result = $ds->postVoiceFavorites(array('post_id' => $postId, 'user_id' => $userId));
+        $this->assertTrue(is_array($result));
+        $this->assertTrue(isset($result['id']));
+        $this->assertTrue(isset($result['text']));
+        $this->assertTrue(isset($result['created_at']));
+        $this->assertTrue(is_array($result['user']));
+
+        debug($result);
     }
 
 }
