@@ -1,7 +1,7 @@
 <?php
 
 App::import('Core', array('Xml', 'Cache'));
-App::import('vendor', 'MixiKit.HttpSocketOauth', array('file' => 'http_socket_oauth' . DS . 'http_socket_oauth.php'));
+App::import('Core', 'HttpSocket');
 
 /**
  * Mixi API Datasource

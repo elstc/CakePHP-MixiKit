@@ -208,8 +208,6 @@ class MixiBehavior extends ModelBehavior {
         if (empty($userProfile)) {
             $this->DataSource->setToken($token['access_token']);
             $userProfile = $this->DataSource->getMyProfile();
-            debug($token);
-            debug($userProfile);
         }
 
         $data = array(
