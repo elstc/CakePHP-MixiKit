@@ -395,4 +395,26 @@ class MixiGraphApiSourceTestCase extends CakeTestCase {
         debug($result);
     }
 
+    function testGetPeople() {
+
+        #return $this->skipIf(true);
+
+        $ds = ConnectionManager::getDataSource('test_mixi_graph_api');
+        /* @var $ds MixiGraphApiSource */
+
+        // -- refreshTokenが無効になる場合あり
+        $refreshToken = 'a6065549ec8e7be1b0505c31142ff200a7de8869';
+        $ds->setToken($ds->refreshAccessToken($refreshToken));
+
+        $result = $ds->getPeople();
+        $this->assertTrue(is_array($result));
+        $this->assertTrue(Set::numeric(array_keys($result)));
+        $this->assertTrue(isset($result[0]['id']));
+        $this->assertTrue(isset($result[0]['text']));
+        $this->assertTrue(isset($result[0]['created_at']));
+        $this->assertTrue(is_array($result[0]['user']));
+
+        debug($result);
+    }
+
 }

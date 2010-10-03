@@ -417,6 +417,8 @@ class MixiGraphApiSource extends DataSource {
         return $result;
     }
 
+    // == Voice API Read Methods
+
     /**
      * あるユーザのつぶやき一覧の取得
      * 
@@ -570,6 +572,8 @@ class MixiGraphApiSource extends DataSource {
         return $this->_request($this->_buildRequest($url, $method, $params));
     }
 
+    // == Voice API Update Methods
+
     /**
      * つぶやきの投稿
      *
@@ -660,7 +664,6 @@ class MixiGraphApiSource extends DataSource {
 
         return $this->_request($this->_buildRequest($url, $method, $params));
     }
-
 
     /**
      * あるコメントの削除
@@ -770,6 +773,64 @@ class MixiGraphApiSource extends DataSource {
         $method = 'POST';
 
         return $this->_request($this->_buildRequest($url, $method, $params));
+    }
+
+    // == Pepole API Methods
+
+    /**
+     * 友人一覧の取得
+     *
+     * @param array $options
+     *      user_id:  取得したいユーザのID、または”@me”
+     *      group_id: 取得したいグループのID、または”@self”、”@friends”
+     * @see http://developer.mixi.co.jp/connect/mixi_graph_api/mixi_io_spec_top/people-api
+     */
+    function getPeople($options = array()) {
+
+        $defaults = array(
+            'user_id' => '@me',
+            'group_id' => '@self',
+        );
+
+        $params = am($defaults, $options);
+
+        $userId = '';
+        if (!empty($params['user_id'])) {
+            $userId = $params['user_id'];
+            unset($params['user_id']);
+        }
+
+        $groupId = '';
+        if (!empty($params['group_id'])) {
+            $groupId = $params['group_id'];
+            unset($params['group_id']);
+        }
+
+        if (empty($userId) || empty($groupId)) {
+            return false;
+        }
+
+        $url = sprintf('http://api.mixi-platform.com/2/people/%s/%s', $userId, $groupId);
+        $method = 'GET';
+
+        return $this->_request($this->_buildRequest($url, $method, $params));
+    }
+
+    /**
+     * 自分自身のプロフィール取得
+     */
+    function getMyProfile() {
+
+        $result = $this->getPeople(array(
+                    'user_id' => '@me',
+                    'group_id' => '@self',
+                ));
+
+        if (!empty($result['entry'])) {
+            return $result['entry'];
+        }
+
+        return $result;
     }
 
 }
