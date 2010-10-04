@@ -321,6 +321,7 @@ class MixiGraphApiSource extends DataSource {
         $url = $this->_getAuthorizationRequestUrl($options['platform']);
         unset($options['platform']);
 
+        // TODO: スコープをdatabase.phpで指定可能に
         if (is_array($options['scope'])) {
             $options['scope'] = join(' ', $options['scope']);
         }

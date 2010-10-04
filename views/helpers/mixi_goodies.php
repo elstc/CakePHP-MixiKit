@@ -1,5 +1,7 @@
 <?php
+
 App::import('Helper', 'Form');
+
 /**
  * TwitteKit TwitterGoodies Helper
  *
@@ -21,19 +23,16 @@ App::import('Helper', 'Form');
 class MixiGoodiesHelper extends AppHelper {
 
     public $helpers = array('Html', 'Form', 'Js');
-
     /**
      *
      * @var HtmlHelper
      */
     public $Html;
-
     /**
      *
      * @var FormHelper
      */
     public $Form;
-
     /**
      *
      * @var JsHelper
@@ -71,7 +70,7 @@ class MixiGoodiesHelper extends AppHelper {
         unset($inputOptions['counterText']);
         unset($inputOptions['submit']);
 
-        $out  = $this->Html->script($options['jqueryCharCount']);
+        $out = $this->Html->script($options['jqueryCharCount']);
 
         $out .= $this->Form->input($fieldName, $inputOptions);
 
@@ -93,7 +92,6 @@ class MixiGoodiesHelper extends AppHelper {
         }
 
         return $this->output($out);
-
     }
 
     /**
@@ -108,30 +106,31 @@ class MixiGoodiesHelper extends AppHelper {
     public function oauthLink($options = array()) {
 
         $default = array(
-            'loading' => __d('mixi_kit', 'Loading...', true),
-            'login' => __d('mixi_kit', 'Login Mixi', true),
-            'datasource' => 'twitter',
-            'authenticate' => false,
+            'title' => __d('mixi_kit', 'Login Mixi', true),
+            'datasource' => 'mixi',
             'loginElementId' => 'mixi-login-wrap',
+            'platform' => MixiGraphApiSource::AUTHORIZATION_PLATFORM_PC,
+            'display' => MixiGraphApiSource::AUTHORIZATION_DISPLAY_PC,
+            'scope' => array(
+                MixiGraphApiSource::SCOPE_R_PROFILE,
+                MixiGraphApiSource::SCOPE_R_UPDATES,
+                MixiGraphApiSource::SCOPE_R_VOICE,
+                MixiGraphApiSource::SCOPE_W_VOICE),
         );
 
         $options = am($default, $options);
 
-        $request_url = $this->Html->url(array('plugin' => 'mixi_kit', 'controller' => 'oauth', 'action' => 'authorize_url/' . urlencode($options['datasource'])), true);
+        $ds = ConnectionManager::getDataSource($options['datasource']);
+        /* @var $ds MixiGraphApiSource */
+        $url = $ds->getRequestUrl(array_intersect_key($options, array('platform', 'display', 'scope')));
 
-        $this->Js->buffer("
-            $.getJSON('{$request_url}', {}, function(data){
-            var link = $('<a>').attr('href', data.url).text('{$options['login']}');
-            $('#{$options['loginElementId']} .loading').remove();
-            $('#{$options['loginElementId']}').append(link);
-            });
-        ");
-
-        $out = sprintf('<span id="%s"><span class="loading">%s</span></span>', $options['loginElementId'], $options['loading']);
+        $out = sprintf('<span id="%s">%s</span>',
+                        $options['loginElementId'],
+                        $this->Html->link($options['title'], $url)
+        );
 
         return $this->output($out);
     }
-
 
     /**
      * linkify text
@@ -146,19 +145,19 @@ class MixiGoodiesHelper extends AppHelper {
     public function linkify($value, $options = array()) {
 
         $default = array(
-            'url'      => true,
+            'url' => true,
             'username' => true,
-            'hashtag'  => true,
+            'hashtag' => true,
         );
 
         $validChars = '(?:[' . preg_quote('!"$&\'()*+,-.@_:;=~', '!') . '\/0-9a-z]|(?:%[0-9a-f]{2}))';
         $_urlMatch = 'https?://(?:[a-z0-9][-a-z0-9]*\.)*(?:[a-z0-9][-a-z0-9]{0,62})\.(?:(?:[a-z]{2}\.)?[a-z]{2,6})' .
-            '(?::[1-9][0-9]{0,4})?' . '(?:\/' . $validChars . '*)?' . '(?:\?' . $validChars . '*)?' . '(?:#' . $validChars . '*)?';
+                '(?::[1-9][0-9]{0,4})?' . '(?:\/' . $validChars . '*)?' . '(?:\?' . $validChars . '*)?' . '(?:#' . $validChars . '*)?';
 
         $replaces = array(
-            'url'      => array('!(^|[\W])(' . $_urlMatch . ')([\W]|$)!iu' => '$1<a href="$2">$2</a>$3'),
+            'url' => array('!(^|[\W])(' . $_urlMatch . ')([\W]|$)!iu' => '$1<a href="$2">$2</a>$3'),
             'username' => array('!(^|[^\w/?&;])@(\w+)!iu' => '$1<a href="http://twitter.com/$2">@$2</a>$3'),
-            'hashtag'  => array('!(^|[^\w/?&;])#(\w+)!iu' => '$1<a href="http://search.twitter.com/search?q=%23$2">#$2</a>$3'),
+            'hashtag' => array('!(^|[^\w/?&;])#(\w+)!iu' => '$1<a href="http://search.twitter.com/search?q=%23$2">#$2</a>$3'),
         );
 
         $options = am($default, $options);

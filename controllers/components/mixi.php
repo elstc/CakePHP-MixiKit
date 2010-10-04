@@ -125,32 +125,7 @@ class MixiComponent extends Object {
      * @return string authorize_url
      */
     public function getAuthorizeUrl($options = array()) {
-
-        $defaults = array(
-            'use_cookie' => false,
-        );
-
-        $options = am($defaults, $options);
-
-        // -- check Cookie
-        $use_cookie = $options['use_cookie'];
-        unset($options['use_cookie']);
-        $cookie_key = $this->_getAuthorizeUrlCookieName();
-
-        if ($use_cookie && $this->Cookie->read($cookie_key)) {
-
-            return $this->Cookie->read($cookie_key);
-        }
-
-        // -- request token
-        $url = $this->DataSource->getRequestUrl($options);
-
-        // -- set cookie
-        if ($use_cookie) {
-            $this->Cookie->write($cookie_key, $url, true, self::OAUTH_URL_COOKIE_EXPIRE);
-        }
-
-        return $url;
+        return $this->DataSource->getRequestUrl($options);
     }
 
     /**
@@ -159,9 +134,6 @@ class MixiComponent extends Object {
      * @return array|false
      */
     public function getAccessToken() {
-
-        // remove authorize/authenticate url cookie
-        $this->deleteAuthorizeCookie();
 
         if (empty($this->controller->params['url']['code'])) {
 
@@ -218,15 +190,6 @@ class MixiComponent extends Object {
 
             return call_user_func_array(array($this->DataSource, $name), $arg);
         }
-    }
-
-    /**
-     * delete Authorize/Authenticate url cookie
-     */
-    public function deleteAuthorizeCookie() {
-
-        $this->Cookie->delete($this->_getAuthorizeUrlCookieName());
-        $this->Cookie->delete($this->_getAuthenticateUrlCookieName());
     }
 
     /**

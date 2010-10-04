@@ -44,28 +44,8 @@ class OauthController extends AppController {
 
         if (!empty($this->Auth) && is_object($this->Auth)) {
 
-            $this->Auth->allow('authorize_url', 'callback');
+            $this->Auth->allow('callback');
         }
-    }
-
-    /**
-     * get authorize url
-     *
-     * @param string $datasource
-     */
-    public function authorize_url($datasource = null) {
-
-        Configure::write('debug', 0);
-        $this->layout = 'ajax';
-
-        // -- set datasource
-        $this->Mixi->setMixiSource($datasource);
-
-        // set Authorize Url
-        $this->set('url', $this->Mixi->getAuthorizeUrl(array(
-                    'scope' => array(MixiGraphApiSource::SCOPE_R_PROFILE, MixiGraphApiSource::SCOPE_R_VOICE, MixiGraphApiSource::SCOPE_W_VOICE), // TODO: スコープはdatabase.phpで指定可能に
-                    'use_cookie' => true,
-                )));
     }
 
     /**
@@ -76,7 +56,6 @@ class OauthController extends AppController {
 
         // 正当な返り値かチェック
         if (empty($this->params['url']['code'])) {
-            $this->Mixi->deleteAuthorizeCookie();
             $this->flash(__d('mixi_kit', 'Authorization failure.', true), '/', 5);
             return;
         }
