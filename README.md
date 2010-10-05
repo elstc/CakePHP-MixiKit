@@ -1,6 +1,6 @@
 # MixiKit Plugin for CakePHP 1.3+
 
-This plugin provides Mixi API DataSource, Behavior, Components, with OAuth support.
+This plugin provides "mixi Graph API" DataSource, Behavior, Components, with OAuth support.
 
 Copyright 2010, ELASTIC Consultants Inc. (http://elasticconsultants.com)
 
